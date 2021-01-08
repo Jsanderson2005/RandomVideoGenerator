@@ -1,5 +1,11 @@
 <!DOCTYPE html>
 <html>
+
+<head>
+    <title>
+        Random Video Generator
+    </title>
+</head>
 <style>
     input[type=text],
     select {
@@ -12,8 +18,7 @@
         box-sizing: border-box;
     }
 
-    input[type=submit] {
-        width: 100%;
+    button {
         background-color: black;
         color: white;
         padding: 14px 20px;
@@ -23,7 +28,7 @@
         cursor: pointer;
     }
 
-    input[type=submit]:hover {
+    button:hover {
         background-color: grey;
     }
 
@@ -34,29 +39,78 @@
         align-items: center;
         height: 200px;
     }
+
+    .video-player {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .left-button-wrap {
+        display: flex;
+        justify-content: right;
+        align-items: center;
+        padding: 20px
+    }
 </style>
 
 <body>
     <div class="main-div">
-        <li style="list-style-type:none;padding:50px">
-            <h3 style="width:100%;text-align:center">Random Video</h3>
-            <h4 style="width:100%;text-align:center"><a href="/upload">Add to the random list here!</a></h4>
-            <button style="width:10%;text-align:center;display: block; margin:auto" onclick="refreshIframe();">Find a new video</button>
+        <li style="list-style-type:none;padding:50px;padding-top:0px">
+            <h1 style="width:100%;text-align:center">Random Video Generator</h1>
+            <p style="width:100%;text-align:center"><a href="/upload">Add to the random list here!</a></p>
             <br />
+            <button style="text-align:center;display: block;margin:auto" id="MuteButton" onClick="toggleMute(this);">UnMute</button>
             <br />
-            <iframe width="50%" height="400px" name="VideoContent" style="display: block; margin:auto" src="/video.mp4"></iframe>
+            <div id="VideoPlayer" style="margin:auto" class="video-player">
+                <button class="vertical-center" onClick="skip(-5)" style="margin-left: 20%"><<</button>
+                <video autoplay loop muted onClick="playPause();" width="50%" height="500px" id='VideoContent'
+                    src="/video.mp4" style="margin:auto">
+                    <source src="/video.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <script>
+
+                    function playPause() {
+                        var videoPlayer = document.getElementById('VideoContent');
+                        if (videoPlayer.paused)
+                            videoPlayer.play();
+                        else
+                            videoPlayer.pause();
+                    }
+                    function refreshIframe() {
+                        var ifr = document.getElementById("VideoContent");
+                        var rand = Math.floor((Math.random() * 1000000) + 1);
+                        ifr.src = "video.mp4?uid=" + rand;
+                    }
+
+                    function skip(value) {
+                        var video = document.getElementById("VideoContent");
+                        video.currentTime += value;
+                    }
+
+                    function toggleMute(button) {
+                        var video = document.getElementById("VideoContent");
+                        video.muted = !video.muted;
+                        if (video.muted) {
+                            button.textContent = "UnMute";
+                        }
+                        else {
+                            button.textContent = "Mute";
+                        }
+                    }
+
+                </script>
+                <button onClick="skip(5);" class="vertical-center" style="margin-right: 20%">>></button>
+            </div>
             <br />
+            <button style="width:50%;text-align:center;display: block;margin:auto" onclick="refreshIframe();">Find a new
+                video</button>
             <br />
             <br />
             <p style="width:100%;text-align:center">The use of the software and scripts downloaded on this site is done
-                at your own discretion and risk.</p>
-            <script>
-                function refreshIframe() {
-                    var ifr = document.getElementsByName('VideoContent')[0];
-                    var rand = Math.floor((Math.random() * 1000000) + 1);
-                    ifr.src = "video.mp4?uid=" + rand;
-                }
-            </script>
+                at your own discretion and risk, I do not own any of these videos.</p>
+            <p style="width:100%;text-align:center"><a href="/report">Report a video or Feedback</a></p>
         </li>
     </div>
 </body>

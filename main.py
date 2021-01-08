@@ -5,6 +5,23 @@ import random
 import json
 import youtube_dl
 import glob
+import smtplib
+from email.message import EmailMessage
+import urllib.request
+import mimetypes
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from moviepy.video.VideoClip import ImageClip
+from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
+
+def get_file_name_type(path):
+    firstpos=path.rfind("/")
+    lastpos=len(path)
+    return path[firstpos+1:lastpos]
+
+def get_file_name(path):
+    firstpos=path.rfind("/")
+    lastpos=path.rfind(".")
+    return path[firstpos+1:lastpos]
 
 app = Flask(__name__)
 
@@ -55,13 +72,35 @@ def index():
 def upload():
     return render_template('upload.html')
 
+@app.route('/success')
+def success():
+    return render_template('success.html')
+
 @app.route('/upload/api', methods=['GET'])
-def upload_file():
+def upload_link():
     link = request.args.get('link')
     if link:
         result = video_id(link)
         if result == None:
-            abort(400, 'Not a youtube link!')
+            path = link
+            mimetypes.init()
+            mimestart = mimetypes.guess_type(path)[0]
+            if mimestart != None:
+                mimestart = mimestart.split('/')[0]
+                if mimestart == 'video':
+                    opener = urllib.request.build_opener()
+                    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
+                    urllib.request.install_opener(opener)
+                    urllib.request.urlretrieve(path, './temp/' + get_file_name_type(path)) 
+                    filePath =  './temp/' + get_file_name_type(path)
+                    clip = VideoFileClip(filePath)
+                    clip.write_videofile("./videos/" + get_file_name(path) + '.mp4')
+                    os.remove(filePath) 
+                    return redirect("/success", code=302)
+                else:
+                    abort(400, 'This is not a recognised link!')
+            else:
+                abort(400, 'This is not a recognised link!')
         else:
             append_json(result)
             ydl_opts = {'outtmpl': os.path.join('./videos', '%(title)s.%(ext)s'),}
@@ -70,13 +109,50 @@ def upload_file():
                 with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([youtube_link])
             except:
-                abort(500, 'There was an error downloading the link')
+                try:
+                    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                        ydl.download([youtube_link])
+                except:
+                    abort(500, 'There was an error downloading the youtubelink')
             append_json(result)
-            return redirect("/upload", code=302)
-    
+            return redirect("/success", code=302)
+
+@app.route('/report/api', methods=['GET'])
+def report_api():
+    title = request.args.get('title')
+    message = request.args.get('message')
+    gmail_user = 'randomvideogeneratoronline@gmail.com'
+    gmail_password = 'Ch4rlieTheD0g2019'
+    sent_from = gmail_user
+    to = "Joshua@thisisthesandersons.co.uk"
+    subject = '[RANDOM VIDEO GENERATOR] ' + title 
+    msg = EmailMessage()
+    msg.set_content(message)
+    msg['From'] = sent_from
+    msg['To'] = to
+    msg['Subject'] = subject
+
+    try:
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.ehlo()
+        server.login(gmail_user, gmail_password)
+        server.sendmail(sent_from, to, msg.as_string())
+        server.close()
+        print("\n")
+        print("SENT MESSAGE: \n" + msg.as_string())
+        return redirect("/success", code=302)
+    except:
+        abort(500, 'There was an error submitting your request at this time, please try again later.')
+
+    return redirect("/success", code=302)
+
+@app.route('/report', methods=['GET'])
+def report():
+    return render_template('feedback.html')
+
 @app.route('/video.mp4', methods=['GET'])
 def embed():
-    return send_file(random_video(),attachment_filename='video.mp4')
+    return send_file(random_video())
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
