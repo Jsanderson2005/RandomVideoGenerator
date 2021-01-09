@@ -121,10 +121,10 @@ def upload_link():
 def report_api():
     title = request.args.get('title')
     message = request.args.get('message')
-    gmail_user = 'randomvideogeneratoronline@gmail.com'
-    gmail_password = 'Ch4rlieTheD0g2019'
+    gmail_user = 'an-email@example.com'
+    gmail_password = 'PASSWORD'
     sent_from = gmail_user
-    to = "Joshua@thisisthesandersons.co.uk"
+    to = "your-email@example.com"
     subject = '[RANDOM VIDEO GENERATOR] ' + title 
     msg = EmailMessage()
     msg.set_content(message)
